@@ -24,6 +24,7 @@ configure do
     (
     id INTEGER PRIMARY KEY AUTOINCREMENT , 
     created_date DATE, 
+    author_name TEXT,
     content TEXT
     )'
 
@@ -48,15 +49,20 @@ end
 
 post '/new' do
     # получаем переменную из post-запрсоа
+    @name = params[:name]
     @content = params[:content]
 
-    if @content.length <= 0
-        @error = 'Type post text'
+    hh = { name: 'Введите имя',
+           content: 'Введите текст'}
+    #для каждой пары ключ-значение
+    @error = hh.select {|key,_| params[key] == ""}.values.join(", ")
+
+    if @error != ''
         return erb :new
     end
 
     #сохранение данных в БД
-    @db.execute 'insert into Posts (content, created_date) values (?, datetime())', [@content]
+    @db.execute 'insert into Posts (author_name, content, created_date) values (?, ?, datetime())', [@name], [@content]
     #перенаправление на главную страницу
     redirect to '/'
 end
@@ -64,7 +70,7 @@ end
 #вывод информаций о посте
 get '/details/:post_id' do
     #получаем переменную из utl'a
-    post_id = params[:post_id]
+    post_id = params[:post_id] unless params[:post_id].nil?
 
     #получаем список постов
     #у нас будет только 1 пост
@@ -82,7 +88,12 @@ end
 post '/details/:post_id' do
     #получаем переменную из utl'a
     post_id = params[:post_id]
-    content = params[:content]
+    @content = params[:content]
+
+    if @content.length <= 0
+        @error = 'Type comment text'
+        return erb :details
+    end
 
     @db.execute 'insert into Comments 
     (
